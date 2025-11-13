@@ -53,7 +53,9 @@ def generate_steering_vector(model_name: str, data_path: str, alpha: int, hook_p
             token_pos=-1,
             batch_size=batch_size
         )
-        steering_vectors[f"layer.{i}.{hook_point}"] = steer_vec
+        steering_vectors[f"layer.{i}.{hook_point}"] = steer_vec.to("cpu")
+        del steer_vec
+        torch.cuda.empty_cache()
 
         # steered_logit = apply_steering(
         #     model=model, 
@@ -78,7 +80,7 @@ def capital_of_france(model_name: str, data_path: str, hook_point: str):
     for token in target_tokens:
         labels.append(model.to_string(token))
 
-    logits = logit_lens(model, model.to_tokens(prompts), [hook_point])
+    logits = logit_lens(model, model.to_tokens(prompts), hook_point)
     mat = np.zeros((len(target_tokens), model.cfg.n_layers))
 
     print("TOP 5 PREDICTIONS")

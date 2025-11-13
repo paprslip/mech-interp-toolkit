@@ -7,23 +7,24 @@ from jaxtyping import Int, Float
 def logit_lens(
     model: HookedTransformer, 
     tokens: Int[torch.Tensor, "batch pos"], 
-    hook_points: list[str], 
+    hook_point: str, 
 ) -> dict[str, Float[torch.Tensor, "batch pos d_vocab"]]:
-
-    logits, cache = model.run_with_cache(tokens)
 
     has_bu = hasattr(model, "b_U")
     results = {}
     for layer in range(model.cfg.n_layers):
-        for hook_point in hook_points:
-            resid = cache[hook_point, layer]
-            normalized = model.ln_final(resid)
-            proj = normalized @ model.W_U
+        act_name = tl_utils.get_act_name(hook_point, layer)
+        _, cache = model.run_with_cache(tokens, names_filter = [act_name])
 
-            if has_bu:
-                proj += model.b_U
+        resid = cache[hook_point, layer]
+        normalized = model.ln_final(resid)
+        proj = normalized @ model.W_U
 
-            results[f"layer.{layer}.{hook_point}"] = proj
+        if has_bu:
+            proj += model.b_U
+        
+        results[f"layer.{layer}.{hook_point}"] = proj
+
     return results
 
 def project_to_vocab(model: HookedTransformer, resid: Float[torch.Tensor, "batch pos d_model"]):

@@ -60,12 +60,18 @@ def steering_vector(
     ) -> Float[torch.Tensor, "batch pos d_model"]:
 
         vec = torch.zeros(model.cfg.d_model, device=model.cfg.device)
+        act_name = tl_utils.get_act_name(hook_point, layer)
 
         for i in range(0, len(prompts), batch_size):
-            _, cache = model.run_with_cache(model.to_tokens(prompts))
+            tokens = model.to_tokens(prompts[i:i+batch_size]).to(model.cfg.device)
+            _, cache = model.run_with_cache(tokens, names_filter=lambda name: name == act_name)
             activations = cache[hook_point, layer]
-            vec += activations[:, token_pos, :].sum(dim=0)
+            batch_vec = activations[:, token_pos, :].sum(dim=0)
+            vec += batch_vec
 
+            del cache, activations,batch_vec, tokens
+            torch.cuda.empty_cache()
+            
         return vec / len(prompts)
 
     pos_mean = resid_mean(model, positive, layer, hook_point, token_pos)
