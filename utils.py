@@ -19,14 +19,14 @@ def load_data(path):
 
     return {"prompts": questions, "positive": pos_prompts, "negative": neg_prompts}
 
-def save_tensors(tensors: list[torch.Tensor], path: str, name: list[str]):
-    if len(tensors) != len(name):
+def save_tensors(tensors: list[torch.Tensor], names: list[str], path: str):
+    if len(tensors) != len(names):
         raise ValueError("Each tensor to be saved must have a key!")
     path = Path(path)
     data = {}
-    for i in range(len(tensors)):
-        data[name] = tensors[i]
-    save_file({name: tennsor.detach().cpu()}, str(path))
+    for name, tensor in zip(names, tensors):
+        data[name] = tensor.detach().cpu()
+    save_file(data, str(path))
 
 def load_tensors(path: str) -> dict[str, torch.Tensor]:
     return load_file(path)

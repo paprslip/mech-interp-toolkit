@@ -21,7 +21,7 @@ MODEL_NAME = "meta-llama/Llama-3.2-1B"
 DATA_PATH = "./data/sample2.jsonl"
 ALPHA = 5.0
 HOOK_POINT = "resid_post"
-BATCH_SIZE = 5
+BATCH_SIZE = 20
 
 @torch.inference_mode()
 def generate_steering_vector(model_name: str, data_path: str, alpha: int, hook_point: str, batch_size: int):
@@ -53,22 +53,22 @@ def generate_steering_vector(model_name: str, data_path: str, alpha: int, hook_p
             token_pos=-1,
             batch_size=batch_size
         )
-        steering_vectors[f"layer.{i}.{hook_point}"] = steering_vector
+        steering_vectors[f"layer.{i}.{hook_point}"] = steer_vec
 
-        steered_logit = apply_steering(
-            model=model, 
-            prompts=prompts, 
-            layer=layer, 
-            steering_vector=steer_vec, 
-            alpha=alpha, 
-            hook_point=hook_point, 
-            token_pos=-1, 
-            batch_size=batch_size
-        )
-        steered_logits[f"layer.{i}.{hook_point}"] = steered_logit
+        # steered_logit = apply_steering(
+        #     model=model, 
+        #     prompts=prompts, 
+        #     layer=layer, 
+        #     steering_vector=steer_vec, 
+        #     alpha=alpha, 
+        #     hook_point=hook_point, 
+        #     token_pos=-1, 
+        #     batch_size=batch_size
+        # )
+        # steered_logits[f"layer.{i}.{hook_point}"] = steered_logit
 
-    return (steering_vectors, steered_logits)
-
+    # return (steering_vectors, steered_logits)
+    return steering_vectors
 
 def capital_of_france(model_name: str, data_path: str, hook_point: str):
     baseline_logits = model(model.to_tokens(prompts))
@@ -109,5 +109,6 @@ def capital_of_france(model_name: str, data_path: str, hook_point: str):
 
 if __name__ == "__main__":
     data = generate_steering_vector(MODEL_NAME, DATA_PATH, ALPHA, HOOK_POINT, BATCH_SIZE)
-    save_tensors(list(data[0].values()), "./results/llama3-1_steering_vectors.safetensors", name=list(data[0].keys))
-    save_tensors(list(data[1].values()), "./results/llama3-1_steered_logits.safetensors", name=list(data[1].keys))
+    #save_tensors(tensors=list(data[0].values()), names=list(data[0].keys()), path="./results/llama3-1_steering_vectors.safetensors")
+    #save_tensors(tensors=list(data[1].values()), names=list(data[1].keys()), path="./results/llama3-1_steered_logits.safetensors")
+    save_tensors(tensors=list(data.values()), names=list(data.keys()), path="./results/llama3-1_steering_vectors.safetensors")
