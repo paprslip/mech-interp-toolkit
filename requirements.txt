@@ -1,10 +1,12 @@
 typing
 jaxtyping
-functools
 collections
 numpy
 torch
+safetensors
 transformer_lens
 sklearn
 matplotlib
 tqdm
+huggingface_hub
+python-dotenv

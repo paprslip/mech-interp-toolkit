@@ -16,3 +16,8 @@ outputs/
 deprecated/
 deprecated_v2/
 results/
+bin/
+include/
+lib/
+lib64/
+pyvenv.cfg
