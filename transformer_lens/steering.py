@@ -6,6 +6,46 @@ from functools import partial
 from jaxtyping import Int, Float
 
 @torch.inference_mode()
+def generate_steering(
+    model: HookedTransformer, 
+    prompts: list[str], 
+    layer: int, 
+    steering_vector: torch.Tensor, 
+    alpha: float, 
+    hook_point: str, 
+    max_new_tokens: int,
+    temperature: float = 0.0,
+    token_pos: int = -1, 
+    batch_size: int = 1
+) -> Float[torch.Tensor, "batch pos d_model"]:
+    """
+    TBD
+    """
+    def hook(
+        logits: Float[torch.Tensor, "batch pos d_model"], 
+        hook: HookPoint, 
+        steering_vector: Float[torch.Tensor, "batch pos d_model"], 
+        alpha: float, 
+        token_pos: int
+    ) -> Float[torch.Tensor, "batch pos d_model"]:
+
+        if token_pos is None:
+            return logits + alpha * steering_vector
+        logits[:, token_pos, :] = logits[:, token_pos, :] + alpha * steering_vector
+        return logits
+
+    tokens = model.to_tokens(prompts)
+    temp_hook_fn = partial(hook, steering_vector=steering_vector, alpha=alpha, token_pos=token_pos)
+    logits = model.generate_with_hooks(
+        tokens, 
+        max_new_tokens = max_new_tokens,
+        fwd_hooks=[(tl_utils.get_act_name(hook_point, layer), temp_hook_fn)],
+        temperature = temperature
+    )
+
+    return model.to_string(logits)
+
+@torch.inference_mode()
 def apply_steering(
     model: HookedTransformer, 
     prompts: list[str], 
